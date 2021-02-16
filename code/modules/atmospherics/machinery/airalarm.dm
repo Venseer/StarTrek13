@@ -89,6 +89,7 @@
 		/datum/gas/oxygen			= new/datum/tlv(16, 19, 135, 140), // Partial pressure, kpa
 		/datum/gas/nitrogen			= new/datum/tlv(-1, -1, 1000, 1000),
 		/datum/gas/carbon_dioxide	= new/datum/tlv(-1, -1, 5, 10),
+		/datum/gas/miasma			= new/datum/tlv/(-1, -1, 2, 5),
 		/datum/gas/plasma			= new/datum/tlv/dangerous,
 		/datum/gas/nitrous_oxide	= new/datum/tlv/dangerous,
 		/datum/gas/bz				= new/datum/tlv/dangerous,
@@ -107,6 +108,7 @@
 		/datum/gas/oxygen			= new/datum/tlv/no_checks,
 		/datum/gas/nitrogen			= new/datum/tlv/no_checks,
 		/datum/gas/carbon_dioxide	= new/datum/tlv/no_checks,
+		/datum/gas/miasma			= new/datum/tlv/no_checks,
 		/datum/gas/plasma			= new/datum/tlv/no_checks,
 		/datum/gas/nitrous_oxide	= new/datum/tlv/no_checks,
 		/datum/gas/bz				= new/datum/tlv/no_checks,
@@ -125,6 +127,7 @@
 		/datum/gas/oxygen			= new/datum/tlv(16, 19, 135, 140), // Partial pressure, kpa
 		/datum/gas/nitrogen			= new/datum/tlv(-1, -1, 1000, 1000),
 		/datum/gas/carbon_dioxide	= new/datum/tlv(-1, -1, 5, 10),
+		/datum/gas/miasma			= new/datum/tlv/(-1, -1, 2, 5),
 		/datum/gas/plasma			= new/datum/tlv/dangerous,
 		/datum/gas/nitrous_oxide	= new/datum/tlv/dangerous,
 		/datum/gas/bz				= new/datum/tlv/dangerous,
@@ -200,7 +203,7 @@
 									datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
-		ui = new(user, src, ui_key, "copypasta", name, 440, 650, master_ui, state)
+		ui = new(user, src, ui_key, "airalarm", name, 440, 650, master_ui, state)
 		ui.open()
 
 /obj/machinery/airalarm/ui_data(mob/user)
@@ -451,7 +454,7 @@
 			for(var/device_id in A.air_scrub_names)
 				send_signal(device_id, list(
 					"power" = 1,
-					"set_filters" = list(/datum/gas/carbon_dioxide),
+					"set_filters" = list(/datum/gas/carbon_dioxide, /datum/gas/miasma),
 					"scrubbing" = 1,
 					"widenet" = 0,
 				))
@@ -467,6 +470,7 @@
 					"power" = 1,
 					"set_filters" = list(
 						/datum/gas/carbon_dioxide,
+						/datum/gas/miasma,
 						/datum/gas/plasma,
 						/datum/gas/water_vapor,
 						/datum/gas/hypernoblium,
@@ -503,7 +507,7 @@
 			for(var/device_id in A.air_scrub_names)
 				send_signal(device_id, list(
 					"power" = 1,
-					"set_filters" = list(/datum/gas/carbon_dioxide),
+					"set_filters" = list(/datum/gas/carbon_dioxide, /datum/gas/miasma),
 					"scrubbing" = 1,
 					"widenet" = 0,
 				))

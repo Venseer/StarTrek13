@@ -255,6 +255,8 @@ Works together with spawning an observer, noted above.
 */
 
 /mob/proc/ghostize(can_reenter_corpse = 1)
+	if(client)
+		client.widescreen = FALSE
 	if(key)
 		if(!cmptext(copytext(key,1,2),"@")) // Skip aghosts.
 			stop_sound_channel(CHANNEL_HEARTBEAT) //Stop heartbeat sounds because You Are A Ghost Now
@@ -297,6 +299,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		setDir(direct)//only update dir if we actually need it, so overlays won't spin on base sprites that don't have directions of their own
 	var/oldloc = loc
 
+	check_widescreen()
+
 	if(NewLoc)
 		forceMove(NewLoc)
 		update_parallax_contents()
@@ -328,6 +332,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(usr, "<span class='warning'>Another consciousness is in your body...It is resisting you.</span>")
 		return
 	client.change_view(CONFIG_GET(string/default_view))
+	client.widescreen = FALSE
 	SStgui.on_transfer(src, mind.current) // Transfer NanoUIs.
 	mind.current.key = key
 	return 1

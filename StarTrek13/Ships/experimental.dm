@@ -2,6 +2,10 @@
 	These are simple defaults for your project.
  */
 
+#define NORMAL = CONFIG_GET(string/default_view)
+#define LARGE = 20
+#define MASSIVE = 25
+
 /obj/structure/overmap
 	animate_movement = 0 //set it
 //	pixel_z = -128
@@ -10,8 +14,8 @@
 	var/angle = 0 //the angle
 	var/vel = 0 //the velocity
 	var/turnspeed = 0.5 //how fast does this bitch turn
-	var/speed = 0 //how fast is this bitch, 5 is pre slow, 2 is hella slow
-	var/max_speed = 2
+	var/speed = 0 //speed
+	var/max_speed = 2 //High warp can get you into the 30s
 	var/acceleration = 0.5 //speed up
 	pixel_collision_size_x = -128
 	pixel_collision_size_y = -120
@@ -27,11 +31,23 @@
 
 	proc/ProcessMove()
 		EditAngle() //we need to edit the transform just incase
+		if(nav_target)
+			if(nav_target in orange(src, 1)) //if we're near our navigational target, slam on the brakes
+				if(vel > 0)
+					if(vel >= 40)
+						vel -= 10
+					else if(vel >= 20)
+						vel -= 2 //Smooth stop, even at high warp.
+					else
+						vel -= acceleration
 		var/x_speed = vel * cos(angle)
 		var/y_speed = vel * sin(angle)
 		PixelMove(x_speed,y_speed)
+		if(!SUPERLAGMODE)
+			parallax_update()
 		if(pilot && pilot.client)
 			pilot.client.pixelXYshit()
+
 
 /obj/effect/ship_overlay
 	var/angle = 0 //the angle
@@ -48,9 +64,10 @@
 		PixelMove(x_speed,y_speed)
 
 /obj/structure/overmap/proc/parallax_update()
-	if(pilot)
-		for(var/obj/screen/parallax_layer/P in pilot.client.parallax_layers)
+	if(pilot && pilot.client)
+		for(var/PP in pilot.client.parallax_layers)
 		//	var/turf/posobj = get_turf(src)
+			var/obj/screen/parallax_layer/P = PP
 			var/x_speed = 5 * cos(angle)
 			var/y_speed = 5 * sin(angle)
 			P.PixelMove(x_speed,y_speed)
@@ -59,10 +76,13 @@
 /obj/structure/overmap/proc/enter(mob/user)
 	if(user.client)
 		if(pilot)
-			to_chat(user, "you kick [pilot] off the ship controls!")
-		//	M.revive(full_heal = 1)
-			exit()
-			return 0
+			var/mode = input("[pilot] is already on the helm, kick them off?", "Are you sure?")in list("yes","no")
+			if(mode == "yes")
+				to_chat(user, "you kick [pilot] off the ship controls!")
+				exit()
+				return FALSE
+			else
+				return FALSE
 		initial_loc = user.loc
 		user.loc = src
 		pilot = user
@@ -74,19 +94,37 @@
 			C.theship = src
 		pilot.whatimControllingOMFG = src
 		pilot.client.pixelXYshit()
+		pilot.status_flags |= GODMODE
+		if(size_class && pilot.client)
+			pilot.client.change_view(size_class)
 		var/area/A = get_area(src)
 		if(A)
 			A.Entered(user)
-		while(pilot)
+		while(1)
 			stoplag()
 			ProcessMove()
-		while(nav_target && pilot)
-			navigate()
+			ProcessFire()
+			if(nav_target)
+				navigate()
+
+
+/obj/structure/overmap/proc/ProcessFire()
+	if(firinginprogress) //Star trek legacy like weapons here we come!!!
+		if(attempt_fire())
+			return
+		else
+			firinginprogress = FALSE
+			target_ship = null
+			target_turf = null
+			return
 
 /obj/structure/overmap/proc/exit(mob/user)
+	pilot.status_flags &= ~GODMODE
 	pilot.forceMove(initial_loc)
 	initial_loc = null
 	if(pilot.client)
+		pilot.client.change_view(CONFIG_GET(string/default_view))
+		pilot.client.widescreen = FALSE //So they get widescreen mode back after we dick with their view
 		pilot.clear_alert("Weapon charge", /obj/screen/alert/charge)
 		pilot.clear_alert("Hull integrity", /obj/screen/alert/charge/hull)
 		RemoveActions()
@@ -171,7 +209,14 @@ atom/movable
 		if(prob(engine_prob))
 			playsound(src,engine_sound,40,1)
 	check_overlays()
+	if(SC)
+		if(SC.engines)
+			if(!SC.engines.check_power())
+				return
 	if(can_move)
+		if(assimilation_tier >= 5) //Borg cube hyperspeed cock block brigade here lads.
+			turnspeed = 1
+			max_speed = 2
 		switch(dir)
 			if(NORTH)
 				if(mob.whatimControllingOMFG)
@@ -234,3 +279,15 @@ atom/movable
 					mob.client.pixelXYshit()
 				else
 					..()
+
+/obj/structure/overmap/proc/TurnTo(atom/target)
+	if(target)
+		var/obj/structure/overmap/ship/self = src //I'm a reel cumputer syentist :)
+		EditAngle()
+		var/target_angle = 450 - SIMPLIFY_DEGREES(ATAN2((32*target.y+target.pixel_y) - (32*self.y+self.pixel_y), (32*target.x+target.pixel_x) - (32*self.x+self.pixel_x)))
+		if(angle > target_angle)
+			angle -= turnspeed
+		if(angle < target_angle)
+			angle += turnspeed
+		if(angle == target_angle)
+			return

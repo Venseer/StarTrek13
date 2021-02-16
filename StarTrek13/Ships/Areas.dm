@@ -13,11 +13,18 @@ var/global/list/global_ship_list = list()
 	flags = NONE
 	requires_power = FALSE
 	var/jumpgate_position = 1 //Change me! whenever you add a new system, incriment this by 1!
-	ambientsounds = list('StarTrek13/sound/ambience/bsgtheme1.ogg','StarTrek13/sound/ambience/bsgtheme2.ogg','StarTrek13/sound/ambience/trektheme1.ogg','StarTrek13/sound/ambience/trektheme2.ogg','StarTrek13/sound/ambience/masstheme1.ogg','StarTrek13/sound/ambience/bsgtheme3.ogg','StarTrek13/sound/ambience/interstellar.ogg')
+	has_gravity = TRUE
 
 /area/overmap/s2
 	name = "Sector 417543 (Neutral zone)"
 
+/area/ship/miranda
+	name = "miranda class"
+
+/area/ship/mirandaDIY
+	name = "USS Ikea Flatpack"
+
+/*E
 /area/overmap/Entered(A)
 	set waitfor = FALSE
 	if(!isliving(A))
@@ -41,6 +48,7 @@ var/global/list/global_ship_list = list()
 			SEND_SOUND(L, sound(sound, repeat = 0, wait = 0, volume = 25, channel = CHANNEL_AMBIENCE))
 			L.client.played = TRUE
 			addtimer(CALLBACK(L.client, /client/proc/ResetAmbiencePlayed), 800)
+*/
 
 /area/overmap/hyperspace
 	name = "hyperspace"
@@ -49,7 +57,6 @@ var/global/list/global_ship_list = list()
 /area/overmap/system
 	name = "Sol (NT)"
 	jumpgate_position = 2
-	music = 'StarTrek13/sound/ambience/bsgtheme2.ogg'
 
 /area/overmap/system/z2
 	name = "Amann" //Test
@@ -71,7 +78,6 @@ var/global/list/global_ship_list = list()
 /area/overmap/system/z6
 	name = "Ursa major (FED)" //Test
 	jumpgate_position = 7
-	music = 'StarTrek13/sound/ambience/trektheme1.ogg'
 
 /obj/structure/space_object
 	icon = 'StarTrek13/icons/trek/space_objects.dmi'
@@ -86,6 +92,23 @@ var/global/list/global_ship_list = list()
 	name = "Supernova"
 	desc = "A star that has gone nova."
 	icon_state = "supernova"
+
+/obj/structure/space_object/earth
+	name = "Earth"
+	desc = "An utterly uninteresting little blue green planet situated in the unfashionable end of the western spiral arm of the galaxy."
+	icon_state = "earth"
+
+/obj/structure/space_object/rocky
+	name = "Class D planetoid"
+	desc = "A lifeless chunk of rock"
+	icon_state = "rockyplanet"
+
+
+/obj/structure/space_object/planet
+	name = "Uncharted planet"
+	desc = "A planet whose composition is unknown."
+	icon_state = "1"
+
 
 /obj/structure/space_object/nebula
 	name = "Nebula"
@@ -120,13 +143,92 @@ var/global/list/global_ship_list = list()
 		return
 
 	for(var/obj/structure/overmap/S in orange(src, 6))
-		if(!S.shields_active)
+		if(istype(S, /obj/structure/overmap/rts_structure))
+			return
+		if(istype(S, /obj/structure/overmap/ship/AI))
+			return
+		if(S.linked_ship == get_area(src))
+			return
+		if(!S.shields_active())
+			to_chat(S.pilot, "Warning: hull temperature rising.")
 			var/turf/open/floor/picked_turf = pick(get_area_turfs(S.linked_ship))
 			picked_turf.atmos_spawn_air("plasma=60;TEMP=3000")
 			time_elapse = world.time + cooldown
 
-/area/ship/sov_backup
-	name = "USS Herald Of Free Enterprise"
+/area/ship
+	parallax_movedir = FALSE
+	name = "USS Cadaver"
+	icon_state = "ship"
+	requires_power = 1 //what have i unleashed unto this world
+	has_gravity = 1 //Grav plates will stay on as long as the area is powered.
+	noteleport = 0
+	blob_allowed = 0
+	dynamic_lighting = DYNAMIC_LIGHTING_FORCED
+	var/obj/item/clothing/neck/combadge/combadges = list()
 
-/area/ship/rom_backup
-	name = "Aurelius"
+//Starfleet
+/area/ship/test
+	name = "USS Runtime"
+
+/area/ship/federation/starbase
+	name = "Starbase 1"
+	icon_state = "ship"
+
+/area/ship/romulan
+	name = "Decius"
+	icon_state = "ship"
+
+/area/ship/federation/entax
+	name = "USS Entax"
+	icon_state = "ship"
+
+/area/ship/federation/sovreign
+	name = "USS Sovereign"
+	icon_state = "ship"
+
+/area/ship/federation/galaxy
+	name = "USS Galaxy"
+	icon_state = "ship"
+
+/area/ship/borg_freighter
+
+
+//Nanotrasen
+
+/area/ship/nanotrasen
+	name = "NSV Muffin"
+	icon_state = "ship"
+
+/area/ship/nanotrasen/fighter
+	name = "NSV Hagan"
+	icon_state = "ship"
+
+/area/ship/nanotrasen/cruiser
+	name = "NSV Hyperion"
+	icon_state = "ship"
+
+/area/ship/nanotrasen/freighter
+	name = "NSV Crates"
+	icon_state = "ship"
+
+/area/ship/nanotrasen/capital_class
+	name = "NSV Annulment"
+	icon_state = "ship"
+
+/area/ship/nanotrasen/ss13
+	name = "Space Station 13"
+	icon_state = "ship"
+
+/area/ship/overmap/nanotrasen/research
+	name = "NSV Woolf research outpost"
+	icon_state = "ship"
+
+/area/ship/overmap/nanotrasen/trading_outpost
+	name = "NSV Mercator trade station."
+	icon_state = "ship"
+
+//Borg
+
+/area/ship/borg
+	name = "Unimatrix 1-3"
+	icon_state = "ship"

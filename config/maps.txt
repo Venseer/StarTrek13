@@ -13,8 +13,30 @@ Format:
 	disabled (disables the map)
 endmap
 
-map boxstation
+map star_trek
+	0
+	0
+	
+endmap
+
+map ds9
 	default
+	
+endmap
+
+map rebelspies
+	0
+	0
+	
+endmap
+
+map odyssey
+	0
+	0
+	
+endmap
+
+map boxstation
 	#voteweight 1.5
 endmap
 

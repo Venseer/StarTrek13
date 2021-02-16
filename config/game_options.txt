@@ -34,8 +34,8 @@ EMOJIS
 ## To speed things up make the number negative, to slow things down, make the number positive.
 
 ## These modify the run/walk speed of all mobs before the mob-specific modifiers are applied.
-RUN_DELAY 2
-WALK_DELAY 4
+RUN_DELAY 1
+WALK_DELAY 2
 
 ## The variables below affect the movement of specific mob types.
 HUMAN_DELAY 0
@@ -55,12 +55,12 @@ ANIMAL_DELAY 1
 
 
 ## ALERT LEVELS ###
-ALERT_GREEN All threats to the station have passed. Security may not have weapons visible, privacy laws are once again fully enforced.
-ALERT_BLUE_UPTO The station has received reliable information about possible hostile activity on the station. Security staff may have weapons visible, random searches are permitted.
-ALERT_BLUE_DOWNTO The immediate threat has passed. Security may no longer have weapons drawn at all times, but may continue to have them visible. Random searches are still allowed.
-ALERT_RED_UPTO There is an immediate serious threat to the station. Security may have weapons unholstered at all times. Random searches are allowed and advised. Additionally, access requirements on some doors have been lifted.
-ALERT_RED_DOWNTO The station's destruction has been averted. There is still however an immediate serious threat to the station. Security may have weapons unholstered at all times, random searches are allowed and advised.
-ALERT_DELTA Destruction of the station is imminent. All crew are instructed to obey all instructions given by heads of staff. Any violations of these orders can be punished by death. This is not a drill.
+ALERT_GREEN All Credible military threats have passed, privacy laws are once again fully enforced.
+ALERT_BLUE_UPTO Credible sources indicate a possible military attack on the sector, all starships must maintain yellow alert.
+ALERT_BLUE_DOWNTO The immediate threat has passed.
+ALERT_RED_UPTO There is a serious military threat and a violation of borders in this sector, all starships must remain combat ready.
+ALERT_RED_DOWNTO The military incursion has been repelled, however all ships must maintain yellow alert.
+ALERT_DELTA A serious threat endangers the entire quadrant, all crew must follow orders; failure to do so will result in instant death.
 
 
 
@@ -73,15 +73,15 @@ ALERT_DELTA Destruction of the station is imminent. All crew are instructed to o
 ## Default probablity is 1, increase to make that mode more likely to be picked.
 ## Set to 0 to disable that mode.
 
-PROBABILITY TRAITOR 5
-PROBABILITY TRAITORBRO 2
-PROBABILITY TRAITORCHAN 4
-PROBABILITY INTERNAL_AFFAIRS 3
-PROBABILITY NUCLEAR 2
-PROBABILITY REVOLUTION 2
-PROBABILITY CULT 2
-PROBABILITY CHANGELING 2
-PROBABILITY WIZARD 4
+PROBABILITY TRAITOR 0
+PROBABILITY TRAITORBRO 0
+PROBABILITY TRAITORCHAN 0
+PROBABILITY INTERNAL_AFFAIRS 0
+PROBABILITY NUCLEAR 0
+PROBABILITY REVOLUTION 0
+PROBABILITY CULT 0
+PROBABILITY CHANGELING 0
+PROBABILITY WIZARD 0
 PROBABILITY MONKEY 0
 PROBABILITY METEOR 0
 PROBABILITY EXTENDED 0
@@ -407,6 +407,7 @@ ROUNDSTART_RACES lizard
 #ROUNDSTART_RACES moth
 ROUNDSTART_RACES plasmaman
 #ROUNDSTART_RACES shadow
+ROUNDSTART_RACES klingon
 
 ## Races that are better than humans in some ways, but worse in others
 #ROUNDSTART_RACES jelly
@@ -427,6 +428,7 @@ ROUNDSTART_RACES plasmaman
 #ROUNDSTART_RACES pod
 #ROUNDSTART_RACES military_synth
 #ROUNDSTART_RACES agent
+#ROUNDSTART_RACES infiltrator
 
 ##-------------------------------------------------------------------------------------------
 
@@ -501,7 +503,7 @@ ARRIVALS_SHUTTLE_DOCK_WINDOW 55
 
 ## How many wirechewing rodents you want to spawn on exposed maintenane wires at the start of the round. You may wish to set this to 0 if you're testing powernets.
 
-MICE_ROUNDSTART 10
+MICE_ROUNDSTART 0
 
 ## If the percentage of players alive (doesn't count conversions) drops below this threshold the emergency shuttle will be forcefully called (provided it can be)
 #EMERGENCY_SHUTTLE_AUTOCALL_THRESHOLD 0.2
@@ -517,7 +519,7 @@ ROUNDSTART_TRAITS
 #DISABLE_HUMAN_MOOD
 
 ## Enable night shifts ##
-#ENABLE_NIGHT_SHIFTS
+ENABLE_NIGHT_SHIFTS
 
 ## Enable randomized shift start times##
 #RANDOMIZE_SHIFT_TIME

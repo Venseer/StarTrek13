@@ -17,8 +17,17 @@
 	var/obj/structure/overmap/ship
 	var/selected = 1
 
+/datum/action/innate/shieldtoggle
+	name = "Toggle Shields"
+	icon_icon = 'StarTrek13/icons/actions/overmap_ui.dmi'
+	button_icon_state = "shieldtoggle"
+	var/obj/structure/overmap/ship
+
+/datum/action/innate/shieldtoggle/Trigger()
+	ship.weapons.shieldgen.toggle(ship.pilot)
+
 /datum/action/innate/weaponswitch/Trigger()
-	ship.AltClick(ship.pilot)
+	ship.switch_mode(ship.pilot)
 	switch(ship.fire_mode)
 		if(1)
 			button_icon_state = "phaser"
@@ -34,20 +43,27 @@
 	var/warp_cost = 4000 //Lotsa energy to warp it
 
 /datum/action/innate/warp/Activate()
+	to_chat(ship.pilot, "This feature is disabled, use the helm console to set speed.")
+	return
+/*
 	if(ship.SC.engines.try_warp())
 		switch(warping)
 			if(TRUE)
 				to_chat(ship.pilot, "Warping deactivated")
 				ship.can_move = TRUE
-				ship.vel = 0
+				ship.vel = 1
 				warping = FALSE
 			if(FALSE)
 				SEND_SOUND(ship.pilot, 'StarTrek13/sound/trek/ship_effects/warp.ogg')
 				to_chat(ship.pilot, "Engaging warp")
 				ship.can_move = FALSE
-				ship.vel = 9
+				ship.vel = ship.max_warp
 				warping = TRUE
+				for(var/mob/L in ship.linked_ship)
+					SEND_SOUND(L, 'StarTrek13/sound/trek/ship_effects/warp.ogg')
+					to_chat(L, "The deck plates shudder as the ship builds up immense speed.")
 		return
+*/
 
 /datum/action/innate/stopfiring
 	name = "Disengage weapons lock"
@@ -97,6 +113,10 @@
 		warp_action.Grant(pilot)
 		warp_action.ship = src
 
+	if(shieldtoggle_action)
+		shieldtoggle_action.target = pilot
+		shieldtoggle_action.Grant(pilot)
+		shieldtoggle_action.ship = src
 
 	if(stopfiring_action)
 		stopfiring_action.target = pilot
@@ -127,6 +147,9 @@
 	if(stopfiring_action)
 		stopfiring_action.target = null
 		stopfiring_action.Remove(pilot)
+	if(shieldtoggle_action)
+		shieldtoggle_action.target = null
+		shieldtoggle_action.Remove(pilot)
 	if(redalert_action)
 		redalert_action.target = null
 		redalert_action.Remove(pilot)

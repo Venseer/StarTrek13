@@ -1,12 +1,32 @@
 /obj/structure/overmap/away/station/system_outpost //This is how you'll capture a system, which will give you points on a regular basis to be used for buying ships etc.
-	name = "Barnard's star station"
-	desc = "A station that coordinates all the operations within the system it occupies. You can beam aboard it to capture the outpost"
+	name = "Spacedock 1"
+	desc = "A station that coordinates all the operations within the system it occupies. You can beam aboard it to capture the outpost."
 	spawn_name = "barnardstar"
 	health = 100000000 //If you blow this up it'll break things
 	max_health = 100000000
+	var/datum/faction/owner
+	faction = "starfleet"
+	var/structures = 0
+	var/structure_limit = 5
+
+/obj/structure/overmap/away/station/system_outpost/process()
+	. = ..()
+	var/obj/machinery/computer/camera_advanced/rts_control/RTS = locate(/obj/machinery/computer/camera_advanced/rts_control) in(linked_ship)
+	if(RTS)
+		if(faction)
+			RTS.faction = faction
+
+/obj/structure/overmap/away/station/system_outpost/ds9
+	name = "Deep Space 9"
+	var/datum/crew/ds9/crew = new
+	health = 100000000 //Blowing it up is also a valid option
+	max_health = 100000000
 
 /area/ship/barnardstar
-	name = "Barnard's star outpost"
+	name = "Spacedock 1"
+
+/area/ship/ds9
+	name = "Deep Space 9"
 
 /obj/structure/overmap/away/station/system_outpost/old
 	name = "Beta Hydri Outpost"
@@ -14,6 +34,7 @@
 	spawn_name = "betahydri"
 	health = 100000000 //If you blow this up it'll break things
 	max_health = 100000000
+	faction = null
 
 /area/ship/old
 	name = "Beta Hydri outpost"
@@ -24,6 +45,7 @@
 	spawn_name = "lagrange"
 	health = 100000000 //If you blow this up it'll break things
 	max_health = 100000000
+	faction = null
 
 /area/ship/asteroid
 	name = "Lagrange IV outpost"
@@ -34,13 +56,15 @@
 	spawn_name = "hotel"
 	health = 100000000 //If you blow this up it'll break things
 	max_health = 100000000
+	faction = null
 
 /obj/structure/overmap/away/station/system_outpost/research
 	name = "USS Woolfe Research Outpost"
 	desc = "A station that coordinates all the operations within the system it occupies. You can beam aboard it to capture the outpost"
 	spawn_name = "research"
-	health = 100000000 //If you blow this up it'll break things
-	max_health = 100000000
+	health = 40000
+	max_health = 40000
+	faction = null
 
 /obj/structure/overmap/away/station/system_outpost/trade
 	name = "USS Quark Trading Outpost"
@@ -48,6 +72,7 @@
 	spawn_name = "trading"
 	health = 100000000 //If you blow this up it'll break things
 	max_health = 100000000
+	faction = null
 
 /area/ship/hotel
 	name = "Astralis I outpost"
@@ -95,7 +120,7 @@
 	icon_state = "systemdominator"
 	var/datum/faction/owner
 	var/beingcaptured = FALSE
-	var/hacktime = 600 //1 minute to capture
+	var/hacktime = 300 //30 seconds to capture
 	var/obj/structure/overmap/away/station/system_outpost/station
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF | FREEZE_PROOF
 	anchored = TRUE
@@ -108,7 +133,10 @@
 
 /obj/structure/capture_device/process()
 	if(owner)
+		station.faction = owner.name
 		owner.addCredits(50)
+		for(var/obj/structure/overmap/rts_structure/RTS in get_area(station))
+			RTS.faction = owner.name
 
 /obj/structure/capture_device/CtrlClick(mob/user)
 	attack_hand(user)
@@ -134,6 +162,11 @@
 			beingcaptured = FALSE
 			station.name = initial(station.name)
 			station.name = "[station.name] ([user.player_faction])"
+			station.owner = owner
+			SSticker.mode.check_win()
+			var/obj/machinery/computer/camera_advanced/rts_control/rts = locate(/obj/machinery/computer/camera_advanced/rts_control) in(get_area(src))
+			if(rts)
+				rts.faction = owner.name
 		beingcaptured = FALSE
 	else
 		to_chat(user, "Someone is already attempting a network breach!")

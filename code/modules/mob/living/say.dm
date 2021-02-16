@@ -8,7 +8,7 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 
 	// Department
 	"h" = "department",
-	"c" = "Command",
+	"c" = "combadge-bridge",
 	"n" = "Science",
 	"m" = "Medical",
 	"e" = "Engineering",
@@ -120,10 +120,41 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 		return
 
 	if(message_mode == "combadge")
-		for(var/obj/item/clothing/neck/combadge/c in contents)
-			var/obj/item/clothing/neck/combadge/thecombadge = c
+		var/obj/item/clothing/neck/combadge/c = locate(/obj/item/clothing/neck/combadge) in contents
+		if(c)
 			message = treat_message(message)
-			thecombadge.send_message(message, src)
+			c.send_message(message, src)
+		var/obj/item/clothing/head/helmet/wars/CS = locate(/obj/item/clothing/head/helmet/wars) in contents
+		if(CS)
+			if(CS.radio)
+				CS.radio.stored_user = src
+				message = treat_message(message)
+				CS.radio.send_message(message,src)
+		var/obj/item/clothing/head/wars/CSS = locate(/obj/item/clothing/head/wars) in contents
+		if(CSS)
+			if(CSS.radio)
+				CSS.radio.stored_user = src
+				message = treat_message(message)
+				CSS.radio.send_message(message,src)
+
+	if(message_mode == "combadge-bridge")
+		var/obj/item/clothing/neck/combadge/c = locate(/obj/item/clothing/neck/combadge) in contents
+		if(c)
+			message = treat_message(message)
+			c.send_message_command(message, src)
+		var/obj/item/clothing/head/helmet/wars/CS = locate(/obj/item/clothing/head/helmet/wars) in contents
+		if(CS)
+			if(CS.radio)
+				CS.radio.stored_user = src
+				message = treat_message(message)
+				CS.radio.send_message_command(message,src)
+		var/obj/item/clothing/head/wars/CSS = locate(/obj/item/clothing/head/wars) in contents
+		if(CSS)
+			if(CSS.radio)
+				CSS.radio.stored_user = src
+				message = treat_message(message)
+				CSS.radio.send_message_command(message,src)
+
 
 	if(stat == DEAD)
 		say_dead(original_message)
@@ -252,17 +283,18 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 	var/list/the_dead = list()
 	for(var/_M in GLOB.player_list)
 		var/mob/M = _M
-		if(M.stat != DEAD) //not dead, not important
-			continue
-		if(!M.client || !client) //client is so that ghosts don't have to listen to mice
-			continue
-		if(get_dist(M, src) > 7 || M.z != z) //they're out of range of normal hearing
-			if(eavesdropping_modes[message_mode] && !(M.client.prefs.chat_toggles & CHAT_GHOSTWHISPER)) //they're whispering and we have hearing whispers at any range off
+		if(M)
+			if(M.stat != DEAD) //not dead, not important
 				continue
-			if(!(M.client.prefs.chat_toggles & CHAT_GHOSTEARS)) //they're talking normally and we have hearing at any range off
+			if(!M.client || !client) //client is so that ghosts don't have to listen to mice
 				continue
-		listening |= M
-		the_dead[M] = TRUE
+			if(get_dist(M, src) > 7 || M.z != z) //they're out of range of normal hearing
+				if(eavesdropping_modes[message_mode] && !(M.client.prefs.chat_toggles & CHAT_GHOSTWHISPER)) //they're whispering and we have hearing whispers at any range off
+					continue
+				if(!(M.client.prefs.chat_toggles & CHAT_GHOSTEARS)) //they're talking normally and we have hearing at any range off
+					continue
+			listening |= M
+			the_dead[M] = TRUE
 
 	var/eavesdropping
 	var/eavesrendered

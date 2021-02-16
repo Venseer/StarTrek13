@@ -14,8 +14,8 @@
 	var/obj/structure/overmap/locked = null
 	var/locking = FALSE
 	var/fire_mode = FIRE_PHASER
-	var/photons = 3 //10 of 10 photons to start, this will link into the torpedo launcher later tm
-	var/max_photons = 3
+	var/photons = 5 //10 of 10 photons to start, this will link into the torpedo launcher later tm
+	var/max_photons = 5
 
 /mob
 	var/obj/structure/overmap/overmap_ship
@@ -37,6 +37,8 @@
 
 /obj/structure/overmap/proc/fire(obj/structure/overmap/target,mob/user) //Try to get a lock on them, the more they move, the harder this is.
 	if(wrecked)
+		return 0
+	if(cloaked)
 		return 0
 	if(target)
 		if(isOVERMAP(target))
@@ -95,8 +97,6 @@
 //	qdel(chargebar)
 	target = src
 
-
-
 /obj/screen/alert/charge
 	icon = 'StarTrek13/icons/trek/overmap_indicators2.dmi'
 	icon_state = "prog_bar_0"
@@ -105,7 +105,7 @@
 
 /obj/screen/alert/charge/Initialize(timeofday)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	START_PROCESSING(SSfastprocess, src)
 	if(mob_viewer)
 		theship = mob_viewer.overmap_ship
 
@@ -190,69 +190,265 @@
 		locked = null
 		qdel(progbar)
 
-/obj/structure/overmap/proc/attempt_fire()
-	if(wrecked)
+/mob/living/carbon/canMobMousedown(atom/object, location, params)
+	. = ..()
+	if(istype(src.loc, /obj/structure/overmap))
+		var/obj/structure/overmap/o = loc
+		. = o
+
+/obj/structure/overmap
+	var/firinginprogress = FALSE //are we shooting something by holding our mouse down?
+	var/stopclickspammingshezza = 10 //1 second cooldown to prevent megalag
+	var/saved_time_fuckoff_shezza
+
+/obj/structure/overmap/proc/onMouseDown(object, location, params, mob/mob)
+	var/list/modifiers = params2list(params)
+	if(modifiers["middle"])
+		if(istype(object, /obj/structure/overmap))
+			nav_target = object
+			return
+	if(modifiers["shift"])
+		if(istype(object, /obj/structure/overmap))
+			var/obj/structure/overmap/om = object
+			to_chat(pilot, "Shield health: [om.SC.shields.health] / [om.SC.shields.max_health] | Hull integrity: [om.health] / [om.max_health]")
 		return
+	if(modifiers["ctrl"])
+		if(istype(object, /obj/structure/overmap))
+			var/obj/structure/overmap/om = object
+			if(!om.comms)
+				to_chat(pilot, "[om]'s comms systems are nonfunctional, perhaps they do not have a hailing console?")
+				return FALSE
+			to_chat(pilot, "Attempting to hail [object] | Forwarding request to comms console")
+			om.comms.hail_request(src)
+		return
+	if(modifiers["alt"])
+		return
+	if(world.time >= saved_time_fuckoff_shezza + stopclickspammingshezza)
+		saved_time_fuckoff_shezza = world.time
+		if(object == src)
+			return
+		if(istype(object, /obj/screen) && !istype(object, /obj/screen/click_catcher))
+			return
+		if(istype(object, /turf/closed/mineral))
+			var/turf/closed/mineral/minecraft = object
+			mine(minecraft)
+		if(istype(object, /obj/structure/overmap))
+			target_ship = object
+		if(istype(object, /turf))
+			target_turf = object
+		if((object in pilot.contents) || (object == mob))
+			return
+		if(!target_ship)
+			return
+		firinginprogress = TRUE
+		damage = SC.weapons.update_weapons()
+	else
+		to_chat(mob, "Weapons are recharging ! (You need to click and hold to fire)")
+		firinginprogress = FALSE
+		return 0
+
+/obj/structure/overmap/proc/onMouseDrag(src_object, over_object, src_location, over_location, params, mob)
+	return
+
+/obj/structure/overmap/proc/onMouseUp(object, location, params, mob/M)
+	damage = SC.weapons.update_weapons()
+	firinginprogress = FALSE
+	firecount = 0
+	if(current_beam)
+		qdel(current_beam) //Aka finish the attack, and ready the SFX for another one. This saves my eardrums :b1:
+	current_beam = null
+	target_turf = null
+
+/obj/structure/overmap/fire(obj/structure/overmap/target,mob/user) //Try to get a lock on them, the more they move, the harder this is.
+	if(wrecked)
+		return 0
+	if(cloaked)
+		return 0
+	if(target)
+		if(isOVERMAP(target))
+			target.agressor = src
+	return TRUE
+
+/obj/structure/overmap
+	var/firecount  = 0
+
+/turf/closed/mineral/gets_drilled(obj/structure/overmap/overmap_miner = null)
+	if(overmap_miner)
+		if(mineralType && (mineralAmt > 0))
+			new mineralType(overmap_miner.weapons.loc, mineralAmt)
+			SSblackbox.record_feedback("tally", "ore_mined", mineralAmt, mineralType)
+	else
+		if(mineralType && (mineralAmt > 0))
+			new mineralType(src, mineralAmt)
+			SSblackbox.record_feedback("tally", "ore_mined", mineralAmt, mineralType)
+	for(var/obj/effect/temp_visual/mining_overlay/M in src)
+		qdel(M)
+	var/flags = NONE
+	if(defer_change) // TODO: make the defer change var a var for any changeturf flag
+		flags = CHANGETURF_DEFER_CHANGE
+	ScrapeAway(null, flags)
+	addtimer(CALLBACK(src, .proc/AfterChange), 1, TIMER_UNIQUE)
+	playsound(src, 'sound/effects/break_stone.ogg', 50, 1) //beautiful destruction
+
+/turf/closed/mineral/bullet_act(obj/item/projectile/P)
+	if(P.damage >= 2000) //It's a photon torpedo
+		explosion(src,5,10,5) //Mood honestly
+	else
+		return ..()
+
+/obj/structure/overmap/proc/mine(turf/closed/mineral/herobrine)
+	switch(fire_mode)
+		if(FIRE_PHASER)
+			if(SC.weapons.attempt_fire())
+				var/source = get_turf(src)
+				if(!current_beam)
+					current_beam = new(source,get_turf(herobrine),time=1000,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
+					spawn(0)
+						current_beam.Start()
+					var/chosen_sound = pick(soundlist)
+					playsound(src,chosen_sound,200,1)
+					for(var/turf/closed/T in getline(get_turf(src), get_turf(herobrine))) //mine DIIIIIIIIIIIIIIIAMONDS
+						if(istype(T, /turf/closed/mineral))
+							var/turf/closed/mineral/TT = T
+							TT.gets_drilled(src)
+		if(FIRE_PHOTON)
+			if(assimilation_tier > 3)
+				to_chat(pilot, "Assimilating [herobrine] would be useless. Try using your phasers instead")
+				return FALSE //Nope you're borg
+			if(photons > 0)
+				photons --
+				var/obj/item/projectile/beam/laser/photon_torpedo/A = new /obj/item/projectile/beam/laser/photon_torpedo(loc)
+				A.starting = loc
+				A.preparePixelProjectile(herobrine,pilot)
+				A.pixel_x = rand(0, 5)
+				A.fire()
+				return
+
+/obj/structure/overmap/proc/attempt_fire()
+	check_assimilation() //Check for special borg weapon attachments
+	if(prob(20))
+		update_weapons()
+	if(wrecked)
+		firinginprogress = FALSE
+		return FALSE
+	if(SC.weapons.damage <= 0)
+		to_chat(pilot, "<span_class = 'warning'>Weapon systems are depowered!</span>")
+		firinginprogress = FALSE
+		return FALSE
 	var/obj/structure/overmap/S = target_ship
 	if(target_ship)
 		target_ship.agressor = src
 	switch(fire_mode)
 		if(FIRE_PHASER)
+			if(assimilation_tier > 1)
+				if(borg_fire(S, 1))
+					return TRUE
+				else
+					return FALSE //:(
 			if(SC.weapons.attempt_fire())
-				if(target_ship && locked == target_ship) //Is the locked target the one we're clicking?
-				//	if(!target_subsystem)
-					//	target_subsystem = pick(S.SC.systems) //Redundant, but here just in case it
-					if(prob(10))
-						var/source = get_turf(src)
-						SEND_SOUND(pilot, sound('StarTrek13/sound/borg/machines/alert1.ogg'))
-						var/turf/T = pick(orange(2, S))
-						current_beam = new(source,T,time=10,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
-						to_chat(pilot, "You missed [S]")
-						return 0 //Miss! they're too fast for YOU suckah
-					var/source = get_turf(src)
-					S.take_damage(SC.weapons.damage,1)
+				var/source = get_turf(src)
+				if(!current_beam)
+					current_beam = new(source,target_ship,time=1000,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
+					var/chosen_sound = pick(soundlist)
+					playsound(src,chosen_sound,100,1)
+					if(S && S.pilot)
+						SEND_SOUND(S.pilot, sound('StarTrek13/sound/borg/machines/alert1.ogg'))
+					to_chat(pilot, "You successfully hit [S]")
 					var/list/L = list()
 					if(S.linked_ship)
 						var/area/thearea = S.linked_ship
 						for(var/turf/T in get_area_turfs(thearea.type))
 							L+=T
-				//	S.take_damage(SC.weapons.maths_damage,theturf)
 					in_use1 = 0
-					var/chosen_sound = pick(soundlist)
-					SEND_SOUND(pilot, sound(chosen_sound))
-					SEND_SOUND(S.pilot, sound('StarTrek13/sound/borg/machines/alert1.ogg'))
-					SC.weapons.charge -= SC.weapons.fire_cost
-					current_beam = new(source,target_ship,time=10,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
-				//	current_beam.beam.pixel_x = target_ship.pixel_x
-				//	current_beam.beam.pixel_y = target_ship.pixel_y
-					to_chat(pilot, "You successfully hit [S]")
-					target_ship.take_damage(damage)
-					if(!S.has_shields())
-						var/obj/effect/explosion/explosion = new(get_turf(target_ship))
-						var/matrix/ntransform = matrix(transform)
-						ntransform.Scale(0.5)
-						explosion.layer = 4.5
-						explosion.pixel_x = target_ship.pixel_x + rand(50,100)
-						explosion.pixel_y = target_ship.pixel_y + rand(50,100)
-						animate(explosion, transform = ntransform, time = 0.5,easing = EASE_IN|EASE_OUT)
 					spawn(0)
-						current_beam.Start()
-					return
+						if(current_beam)
+							current_beam.Start()
+				current_beam.origin = src
+				damage = SC.weapons.update_weapons()
+				damage -= SC.weapons.gimp_damage()
+				S.take_damage(damage, TRUE)
+				return TRUE
+			else
+				return FALSE
 		if(FIRE_PHOTON)
+			if(assimilation_tier > 3)
+				borg_fire(S, 2)
+				return TRUE
 			if(photons > 0)
-				if(target_ship && locked == target_ship)
-					photons --
+				photons --
+				if(target_turf && mode == FIRE_PHOTON)
+					var/obj/item/projectile/beam/laser/photon_torpedo/A = new /obj/item/projectile/beam/laser/photon_torpedo(loc)
+					A.starting = loc
+					A.preparePixelProjectile(target_turf,pilot)
+					A.pixel_x = rand(0, 5)
+					A.fire()
+					return
+				else
 					var/obj/item/projectile/beam/laser/photon_torpedo/A = new /obj/item/projectile/beam/laser/photon_torpedo(loc)
 					A.starting = loc
 					A.preparePixelProjectile(target_ship,pilot)
-					A.pixel_x = rand(-20, 50)
+					A.pixel_x = rand(0, 5)
 					A.fire()
-					playsound(src,'StarTrek13/sound/borg/machines/torpedo1.ogg',40,1)
-					sleep(1)
-					A.pixel_x = target_ship.pixel_x
-					A.pixel_y = target_ship.pixel_y
+					if(target_ship)
+						A.pixel_x = target_ship.pixel_x
+						A.pixel_y = target_ship.pixel_y
+				playsound(src,'StarTrek13/sound/borg/machines/torpedo1.ogg',100,1)
+				sleep(1)
+				return TRUE
 			else
 				to_chat(pilot, "No photon torpedoes remain.")
+				return FALSE
+
+
+/obj/structure/overmap/proc/borg_fire(var/obj/structure/overmap/S, var/fire_mode) //change me this doesnt work
+	if(!fire_mode)
+		return FALSE
+	if(fire_mode == 1)
+		if(assimilation_tier > 1)
+			if(S)
+				if(SC.weapons.attempt_fire())
+					var/source = get_turf(src)
+					if(!current_beam)
+						current_beam = new(source,target_ship,time=1000,beam_icon_state="romulanbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
+						var/chosen_sound = 'StarTrek13/sound/borg/machines/borgphaser.ogg'
+						playsound(src,chosen_sound,100,1)
+						if(S.pilot)
+							SEND_SOUND(S.pilot, sound('StarTrek13/sound/borg/machines/alert1.ogg'))
+						to_chat(pilot, "You successfully hit [S]")
+						var/list/L = list()
+						if(S.linked_ship)
+							var/area/thearea = S.linked_ship
+							for(var/turf/T in get_area_turfs(thearea.type))
+								L+=T
+						in_use1 = 0
+						spawn(0)
+							current_beam.Start()
+					current_beam.origin = src
+					damage = SC.weapons.update_weapons()
+					damage -= SC.weapons.gimp_damage()
+					S.take_damage(damage, TRUE)
+					return TRUE
+	else
+		if(assimilation_tier >= 3)
+			if(S.SC)
+				var/datum/shipsystem/engines/E = locate(/datum/shipsystem/engines) in(S.SC.systems)
+				E.charge = 0
+				var/datum/shipsystem/shields/SS = locate(/datum/shipsystem/shields) in(S.SC.systems)
+				if(SS.health <= 0)
+					return
+				else
+					SS.health -= 1000
+			S.vel = 0
+			if(!current_beam)
+				playsound(src,'StarTrek13/sound/trek/borg_tractorbeam.ogg',100,1) //this is where the fun begins
+				var/turf/source = get_turf(src)
+				current_beam = new(source,target_ship,time=1000,beam_icon_state="romulanbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
+				spawn(0)
+					current_beam.Start()
+				to_chat(pilot, "Tractor beam established.")
+			current_beam.origin = src
+			return TRUE
+	return FALSE
 
 #undef TINY
 #undef SMALL
@@ -324,7 +520,7 @@
 
 /obj/structure/photon_torpedo
 	name = "photon torpedo"
-	desc = "A casing for a powerful explosive, I wouldn't touch it if I were you..."
+	desc = "A casing for a powerful explosive, you can AltClick it to set it to detonate after a set time."
 	icon = 'StarTrek13/icons/trek/star_trek.dmi'
 	icon_state = "torpedo"
 	anchored = FALSE
@@ -336,7 +532,9 @@
 	var/timing = FALSE
 	//var/obj/structure/torpedo_launcher/launcher
 
-/obj/structure/photon_torpedo/AltClick(mob/user)
+/obj/structure/photon_torpedo/AltClick(mob/living/user)
+	if(!iscarbon(user) || user.stat == DEAD)
+		return
 	if(!timing)
 		var/mode = input("Arm the torpedo?.", "Are you sure?")in list("yes","no")
 		if(mode == "yes")
@@ -347,9 +545,9 @@
 				timing = TRUE
 				timer *= 10
 				to_chat(user, "You set [src] to detonate in [timer/10] seconds")
-				desc += "Its trigger is set for a delayed detonation of [timer] seconds!"
+				desc += "Its trigger is set for a delayed detonation!"
 				addtimer(CALLBACK(src, .proc/force_explode), timer)
-		else
+		if(mode == "no" || !mode)
 			return 0
 	else
 		to_chat(user, "It's already been primed, throw it out an airlock!")
@@ -424,7 +622,6 @@ obj/structure/torpedo_launcher/CollidedWith(atom/movable/AM)
 			our_ship.photons ++
 			qdel(AM)
 		else
-			src.say("[our_ship] is at full capacity already.")
 			return ..()
 
 obj/structure/torpedo_launcher/Initialize(timeofday)

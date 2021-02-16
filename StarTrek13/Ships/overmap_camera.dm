@@ -47,9 +47,9 @@
 	var/datum/action/innate/camera_off/overmap/off_action
 
 /obj/structure/overmap/proc/update_observers() //So cameras follow it
-	for(var/mob/camera/aiEye/remote/overmap_observer/R in observers)
-		var/turf/theturf = get_turf(src)
-		R.forceMove(theturf)
+	for(var/R in observers)
+		var/mob/RR = R
+		RR.forceMove(get_turf(src))
 
 
 /mob/camera/aiEye/remote/overmap_observer/relaymove(mob/user,direct)
@@ -79,6 +79,9 @@
 	icon_state = "viewscreen_mini"
 
 /obj/structure/viewscreen/examine(mob/user)
+	if(!our_ship)
+		var/obj/structure/fluff/helm/desk/tactical/F = locate(/obj/structure/fluff/helm/desk/tactical) in(get_area(src))
+		our_ship = F.theship
 	var/area/A = get_area(our_ship)
 	A.Entered(user)
 	if(isliving(user))

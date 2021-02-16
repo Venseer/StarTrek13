@@ -25,12 +25,25 @@
 	if(user)
 		user.adjustBruteLoss(-3)
 		user.adjustFireLoss(-3)
+		user.adjustOxyLoss(-3)
+		if(user.nutrition <= NUTRITION_LEVEL_HUNGRY)
+			user.nutrition = NUTRITION_LEVEL_WELL_FED
+			to_chat(user, "Caloric deficiency detected! - Replenishing energy stores.")
 		if(user.stat == DEAD)
 			user.updatehealth() // Previous "adjust" procs don't update health, so we do it manually.
-			user.visible_message("<span class='notice'>[src]Pings: Resuscitation successful.</span>")
-			playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
 			user.set_heartattack(FALSE)
 			user.revive()
+			user.adjustBruteLoss(-20) //give them a real kick so they do actually revive
+			user.adjustFireLoss(-20)
+			user.adjustOxyLoss(-20)
+			user.adjustToxLoss(-20)
+			user.restoreEars()
+			user.adjust_eye_damage(-5)
+			if(user.eye_blind || user.eye_blurry)
+				user.set_blindness(0)
+				user.set_blurriness(0)
+			if(user.blood_volume < BLOOD_VOLUME_NORMAL)
+				user.blood_volume += 5 // regenerate blood rapidly
 
 	if(world.time >= saved_time2 + cooldown2)
 		saved_time2 = world.time

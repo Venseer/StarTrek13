@@ -563,7 +563,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 		else if ("wings" in mutant_bodyparts)
 			bodyparts_to_add -= "wings_open"
 
-	//Digitigrade legs are stuck in the phantom zone between true limbs and mutant bodyparts. Mainly it just needs more agressive updating than most limbs.
+	//Digitigrade legs are stuck in the phantom zone between true limbs and mutant bodyparts. Mainly it just needs more aggressive updating than most limbs.
 	var/update_needed = FALSE
 	var/not_digitigrade = TRUE
 	for(var/X in H.bodyparts)
@@ -1364,6 +1364,9 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 					H.add_splatter_floor(location)
 				if(get_dist(user, H) <= 1)	//people with TK won't get smeared with blood
 					user.add_mob_blood(H)
+					if(ishuman(user))
+						var/mob/living/carbon/human/dirtyboy
+						dirtyboy.adjust_hygiene(-10)
 
 		switch(hit_area)
 			if(BODY_ZONE_HEAD)

@@ -24,29 +24,33 @@
 	var/datum/shipsystem/target_subsystem
 	var/obj/effect/ship_overlay/hull/hulloverlay = new
 	var/obj/effect/ship_overlay/shield/shieldoverlay = new
+	var/show_shield_overlay = TRUE //Do we visibly show when our shields are up?
 
 /obj/structure/overmap/Initialize(timeofday)
 	. = ..()
 	overmap_objects += src
-	soundloop = new(list(src), TRUE)
 	START_PROCESSING(SSobj,src)
 	linkto()
 	linked_ship = get_area(src)
-	var/list/thelist = list()
-	for(var/obj/effect/landmark/A in GLOB.landmarks_list)
-		if(A.name == spawn_name)
-			thelist += A
-			continue
-//	for(var/obj/effect/landmark/transport_zone/T in world)
-	//	transport_zone = get_area(T)
-	var/obj/effect/landmark/A = pick(thelist)
-	var/turf/theloc = get_turf(A)
 	if(spawn_random)
-		forceMove(theloc)
+		var/list/thelist = list()
+		for(var/obj/effect/landmark/A in GLOB.landmarks_list)
+			if(A.name == spawn_name)
+				thelist += A
+				continue
+	//	for(var/obj/effect/landmark/transport_zone/T in world)
+		//	transport_zone = get_area(T)
+		if(thelist.len)
+			var/obj/effect/landmark/A = pick(thelist)
+			var/turf/theloc = get_turf(A)
+			if(spawn_random)
+				forceMove(theloc)
 	check_overlays()
 
 /obj/structure/overmap/proc/check_overlays()
 	cut_overlays()
+	if(!SC)
+		return
 	engines.ship = src
 	engines.system = SC.engines
 	engines.icon = icon
@@ -81,10 +85,11 @@
 	var/progress3 = health
 	progress3 = CLAMP(progress3, 0, goal3)
 //	hulloverlay.icon_state = "[icon_state]-hull-[round(((progress3 / goal3) * 100), 50)]"
-	shieldoverlay.icon_state = "[icon_state]-shield-0"//This will mean the shield goes invisible, as such an icon state does not exist
-	if(has_shields())
-		shieldoverlay.icon_state = "[icon_state]-shield" //If we HAVE shields, make it the right iconstate so it's visible.
-	shieldoverlay.alpha = round(((progress3 / goal3) * 100), 25)
-	shieldoverlay.alpha += 50 //Even 100 alpha is really transparent, so give it a boost here
-	shieldoverlay.layer = 4.5
-	add_overlay(shieldoverlay)
+	if(show_shield_overlay)
+		shieldoverlay.icon_state = "[icon_state]-shield-0"//This will mean the shield goes invisible, as such an icon state does not exist
+		if(shields_active())
+			shieldoverlay.icon_state = "[icon_state]-shield" //If we HAVE shields, make it the right iconstate so it's visible.
+		shieldoverlay.alpha = round(((progress3 / goal3) * 100), 25)
+		shieldoverlay.alpha += 50 //Even 100 alpha is really transparent, so give it a boost here
+		shieldoverlay.layer = 4.5
+		add_overlay(shieldoverlay)

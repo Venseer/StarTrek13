@@ -1,3 +1,8 @@
+/turf/closed/wall/shipsmooth
+	name = "hull"
+	icon = 'StarTrek13/icons/trek/flaksim-smooth.dmi'
+	smooth = TRUE
+	canSmoothWith = list(/turf/closed/wall/shipsmooth)
 
 /turf/closed/wall/ship
 	name = "hull"
@@ -34,15 +39,12 @@
 
 /turf/closed/wall/ship/voy/Initialize(timeofday)
 	. = ..()
-	set_light(3)
 
 /turf/closed/wall/ship/rom/Initialize(timeofday)
 	. = ..()
-	set_light(3)
 
 /turf/closed/wall/ship/tng/Initialize(timeofday)
 	. = ..()
-	set_light(3)
 
 /turf/closed/wall/ship/steel
 	name = "steel hull"
@@ -72,6 +74,20 @@
 	overlays_file = 'StarTrek13/icons/trek/door_voy_single.dmi'
 	desc = "An advanced door designed in the future, now having relieved bipedal sentients the need to suffer the horror of raising their hands to go into another room."
 
+/obj/machinery/door/airlock/trek/tng/voy
+	name = "airlock"
+	icon = 'StarTrek13/icons/trek/trek_voy_door.dmi'
+	icon_state = "closed"
+	overlays_file = 'StarTrek13/icons/trek/door_voy_single.dmi'
+	desc = "An advanced door designed in the future, now having relieved bipedal sentients the need to suffer the horror of raising their hands to go into another room."
+
+
+/obj/machinery/door/airlock/trek/tng/jeffries
+	name = "hatch"
+	icon = 'StarTrek13/icons/trek/flaksim_jeffriestube_door.dmi'
+	icon_state = "closed"
+	overlays_file = 'StarTrek13/icons/trek/flaksim_jeffriestube_door.dmi'
+	desc = "An advanced hatch designed in the future, now having relieved bipedal sentients the need to suffer the horror of raising their hands to go into another room."
 
 /obj/machinery/door/airlock/trek/tng/voy
 	name = "airlock"
@@ -86,6 +102,11 @@
 	icon = 'StarTrek13/icons/trek/trek_door_single.dmi'
 	icon_state = "closed"
 
+/obj/machinery/door/airlock/trek/tng/single/defiant
+	name = "bulkhead"
+	icon = 'StarTrek13/icons/trek/defiant_door.dmi'
+	icon_state = "closed"
+
 /obj/machinery/door/airlock/trek/tng/double
 	name = "airlock"
 	icon = 'StarTrek13/icons/trek/trek_door_double.dmi'
@@ -98,6 +119,9 @@
 
 /obj/effect/turf_decal/trek
 	icon_state = "trek_edge2"
+
+/obj/effect/turf_decal/trek/grey
+	icon_state = "trek_edge3"
 
 /obj/effect/turf_decal/trek/cargo
 	icon_state = "trek_edge_cargo"
@@ -140,15 +164,6 @@
 	icon = 'StarTrek13/icons/trek/trek_turfs.dmi'
 	icon_state = "cargofloor"
 
-/turf/open/floor/borg/trek/lit
-	name = "lit carpet"
-	desc = "it's lit up"
-	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
-
-/turf/open/floor/borg/trek/lit/Initialize()
-	. = ..()
-	set_light(7)
-
 /obj/structure/fluff/ship/warpbooster
 	name = "wall panel"
 	desc = "a blue panel"
@@ -168,114 +183,46 @@
 	opacity = 0
 
 
-/turf/closed/trek_raised/engineering/a
-	icon_state = "2"
-
-
-/turf/closed/trek_raised/engineering/b
-	icon_state = "3"
-
-/turf/closed/trek_raised/engineering/c
-	icon_state = "4"
-
-/turf/closed/trek_raised/engineering/d
-	icon_state = "5"
-
-/turf/closed/trek_raised/engineering/e
-	icon_state = "6"
-
-/turf/closed/trek_raised/engineering/f
-	icon_state = "7"
-
-/turf/closed/trek_raised/engineering/g
-	icon_state = "8"
-
-/turf/closed/trek_raised/engineering/h
-	icon_state = "9"
-
-/turf/closed/trek_raised/engineering/i
-	icon_state = "10"
-
-/turf/closed/trek_raised/engineering/j
-	icon_state = "11"
-
-/turf/closed/trek_raised/engineering/k
-	icon_state = "12"
-
-/turf/closed/trek_raised/engineering/l
-	icon_state = "13"
-
-/turf/closed/trek_raised/engineering/m
-	icon_state = "14"
-
-/turf/closed/trek_raised/engineering/n
-	icon_state = "15"
-
-/turf/closed/trek_raised/engineering/o
-	icon_state = "16"
-
-/turf/closed/trek_raised/engineering/p
-	icon_state = "17"
-
-/turf/closed/trek_raised/engineering/q
-	icon_state = "18"
-
-/turf/closed/trek_raised/engineering/r
-	icon_state = "19"
-
-/turf/closed/trek_raised/engineering/s
-	icon_state = "20"
-
-/turf/closed/trek_raised/engineering/t
-	icon_state = "21"
-
-/turf/closed/trek_raised/engineering/u
-	icon_state = "22"
-
-/turf/closed/trek_raised/engineering/v
-	icon_state = "23"
-
-/turf/closed/trek_raised/engineering/w
-	icon_state = "24"
-
-/turf/closed/trek_raised/engineering/x
-	icon_state = "25"
-
-/turf/closed/trek_raised/engineering/y
-	icon_state = "26"
-
-/turf/closed/trek_raised/engineering/z
-	icon_state = "27"
-
-/turf/closed/trek_raised/engineering/za
-	icon_state = "28"
-
-/turf/closed/trek_raised/engineering/zb
-	icon_state = "29"
-
-
-
 /turf/open/warp_room_overlay
 	icon = 'StarTrek13/icons/trek/warp_room_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
+
+
+/obj/structure/promenade_overlay
+	icon = 'StarTrek13/icons/trek/promenade_overlay.PNG'
+	name = null
+	density = 1
+	CanAtmosPass = FALSE
+	layer = 4.5
+	anchored = 1
+	can_be_unanchored = 0
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF | FREEZE_PROOF
 
 /turf/open/generic_overlay
 	icon = 'StarTrek13/icons/trek/generic_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
 
-/turf/open/transporter_overlay
+/turf/open/transporterblack
+	icon = 'StarTrek13/icons/trek/transporter_black.PNG'
+	name = null
+
+/obj/structure/transporter_overlay
 	icon = 'StarTrek13/icons/trek/transporterroom_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
-	blocks_air = 1
+	CanAtmosPass = FALSE
+	layer = 4.5
+	anchored = 1
+	can_be_unanchored = 0
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF | FREEZE_PROOF
 
 /turf/open/fighter_overlay
 	icon = 'StarTrek13/icons/trek/fighter_interior_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	layer = 4.5
 	blocks_air = 1
@@ -293,38 +240,69 @@
 
 /turf/open/bridge_overlay/alt
 	icon = 'StarTrek13/icons/trek/bridge_voy_overlay.PNG'
-	name = "floor"
+	name = null
+	density = 1
+	blocks_air = 1
+
+/turf/open/bridge_overlay/galaxy
+	icon = 'StarTrek13/icons/trek/galaxy_bridge_overlay.png'
+	name = null
+	density = 1
+	blocks_air = 1
+
+
+/turf/open/bridge_overlay/defiant
+	icon = 'StarTrek13/icons/trek/bridge_defiant_overlay.PNG'
+	name = null
 	density = 1
 	blocks_air = 1
 
 /turf/open/bridge_overlay/romulan
 	icon = 'StarTrek13/icons/trek/romulan_bridge_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
 
 /turf/open/cargobay_overlay
 	icon = 'StarTrek13/icons/trek/cargobay_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
+
+
+/turf/closed/messhall
+	icon = 'StarTrek13/icons/trek/messhalloverlay.PNG'
+	name = null
+	desc = "huge windows, wow.."
+	density = 1
+	blocks_air = 1
+
+
+/turf/closed/trophies
+	icon = 'StarTrek13/icons/trek/trophyoverlay.PNG'
+	name = null
+	desc = "A huge wall with a tasteful collection of miniature starships adorning it."
+	density = 1
+	blocks_air = 1
+
 
 /turf/open/brig_overlay
 	icon = 'StarTrek13/icons/trek/brig_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
+	layer = 2.8
 
 /turf/open/storagebay_overlay
 	icon = 'StarTrek13/icons/trek/storagebay_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
-
+	layer = 2.8
 
 /turf/open/small_engineering_overlay
 	icon = 'StarTrek13/icons/trek/warp_room_small_overlay.PNG'
-	name = "floor"
+	name = null
 	density = 1
 	blocks_air = 1
 
@@ -349,7 +327,7 @@
 	icon = 'StarTrek13/icons/trek/star_trek.dmi'
 	icon_state = "bridgechair"
 
-/turf/open/floor/trek_special
+/obj/structure/special_trek_turf/brig/wall
 	icon_state = "brig1"
 	name = "wall"
 	desc = "No running through me please"
@@ -358,7 +336,7 @@
 	pixel_x = -3
 	pixel_y = -1
 
-/turf/open/floor/trek_special/cargobay
+/obj/structure/special_trek_turf/cargobay
 	icon_state = "cargobay"
 	name = "wall"
 	desc = "No running through me please"
@@ -367,16 +345,16 @@
 	pixel_x = -3
 	pixel_y = 4
 
-/turf/open/floor/trek_special/dockingbay
+/obj/structure/special_trek_turf/dockingbay
 	icon_state = "dockingbay"
 	name = "wall"
 	desc = "No running through me please"
 	icon = 'StarTrek13/icons/trek/special_turfs.dmi'
-	layer = 4.5
+	layer = 2.8
 	pixel_x = -8
 	pixel_y = 10
 
-/turf/open/floor/trek_special/bridge
+/obj/structure/special_trek_turf/bridge
 	icon_state = "bridge1"
 	name = "wall"
 	desc = "No running through me please"
@@ -385,7 +363,7 @@
 	pixel_x = 6
 	pixel_y = -7
 
-/turf/open/floor/trek_special/bridge/alt
+/obj/structure/special_trek_turf/bridge/alt
 	icon_state = "bridge2"
 	name = "wall"
 	desc = "No running through me please"
@@ -394,7 +372,7 @@
 	pixel_x = 6
 	pixel_y = -6
 
-/turf/open/floor/trek_special/brig
+/obj/structure/special_trek_turf/brig
 	icon_state = "brig"
 	name = "wall"
 	desc = "No running through me please"
@@ -403,24 +381,52 @@
 	pixel_x = 20
 	pixel_y = -13
 
-/turf/open/floor/trek_special/black
+/obj/structure/special_trek_turf
 	icon_state = "black"
 	name = "wall"
 	desc = "No running through me please"
 	icon = 'StarTrek13/icons/trek/trek_turfs.dmi'
-	layer = 4.25
+	layer = 4.5
 	pixel_x = 0
 	pixel_y = 0
 	opacity = 0
+	density = FALSE
+	anchored = TRUE
+	can_be_unanchored = FALSE
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF | FREEZE_PROOF
 
-/turf/open/floor/trek_special/storagebay
+/obj/structure/special_trek_turf/examine(mob/user) //Thanks to pacmandevil of 13th crusade for this code!
+	.=..()
+	if(user.client)//better be one.
+		var/image/transparent_icon = get_transparent_icon()
+		transparent_icon.loc = src
+		user.client.images += transparent_icon
+		addtimer(CALLBACK(src, .proc/update_transparency, user, transparent_icon), 50) //5 seconds
+		return
+
+/obj/structure/special_trek_turf/proc/update_transparency(mob/user, var/image/transparent_icon)
+	if(user && user.client && transparent_icon in user.client.images)
+		user.client.images -= transparent_icon
+		qdel(transparent_icon)
+
+/obj/structure/special_trek_turf/proc/get_transparent_icon()
+	var/image/tMA = new(src)
+	tMA.override = TRUE
+	tMA.alpha = 120 //Make the black go transparent
+	tMA.mouse_opacity = 0
+	tMA.pixel_x = 0
+	tMA.pixel_y = 0
+	return tMA
+
+
+/obj/structure/special_trek_turf/storagebay
 	icon_state = "storagebay"
 	name = "wall"
 	desc = "No running through me please"
 	icon = 'StarTrek13/icons/trek/special_turfs.dmi'
 	layer = 4.5
 
-/turf/open/floor/trek_special/engibay
+/obj/structure/special_trek_turf/engibay
 	icon_state = "engi1"
 	name = "wall"
 	desc = "No running through me please"

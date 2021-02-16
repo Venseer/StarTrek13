@@ -30,282 +30,6 @@
 		return FALSE
 	return 0
 
-/obj/item/generator_fan
-	name = "attachable fan"
-	desc = "Attach this to a shield generator to prevent heat overloads."
-	var/fanhealth = 100
-	var/fanmax = 70
-	var/fanmin = 0
-	var/fancurrent = 0
-
-/obj/machinery/space_battle/shield_generator
-	name = "shield generator"
-	desc = "An advanced shield generator, producing fields of rapidly fluxing plasma-state phoron particles."
-	icon = 'StarTrek13/icons/trek/star_trek.dmi'
-	icon_state = "ecm"
-	use_power = 1
-	var/list/shields = list()
-	var/list/active_shields = list()
-	var/list/inactive_shields = list()
-	var/shields_maintained = 0
-	var/inactivity_time = 0
-	idle_power_usage = 200
-	var/on = FALSE
-	var/controller = null
-	var/health_addition = 1050 // added to shipsystem shields.
-	var/max_health_addition = 1050
-	var/flux_rate = 100
-	var/flux = 1
-	var/heat = 0
-	var/regen = 0
-	var/obj/structure/overmap/ship = null
-	var/datum/shipsystem/shields/shield_system = null
-//	var/efficiency = 1
-//	var/heat_capacity = 20000
-//	var/conduction_coefficient = 0.3
-//	var/list/datum/gas_mixture/airs
-//	var/temperature = 0
-//	var/connected = 1
-
-	var/obj/item/generator_fan/current_fan = null // lowers heat
-
-/obj/machinery/space_battle/shield_generator/attackby(obj/item/weapon/W, mob/user, params)
-	if(istype(W, /obj/item/generator_fan))
-		if(!current_fan)
-			W.loc = src
-			current_fan = W
-			return
-	..()
-
-/*
-
-/obj/machinery/space_battle/shield_generator/proc/calculate()
-	for(var/obj/effect/adv_shield/S in shields)
-		S.health += regen
-
-/obj/machinery/space_battle/shield_generator/process()
-	if(shield_system)
-		if(shield_system.failed)
-			for(var/obj/effect/adv_shield/A in shields)
-				A.deactivate()
-		else
-			for(var/obj/effect/adv_shield/A in shields)
-				A.activate()
-				A.health = shield_system.integrity
-	else
-		STOP_PROCESSING(SSobj,src)
-
-*/
-/*
-	if(!shield_system)
-		return
-	if(shield_system.failed)
-		var/obj/effect/adv_shield/SH = pick(shields)
-	//	STOP_PROCESSING(SSobj, src)
-		for(var/obj/effect/adv_shield/AB in shields)
-			if(SH.health <= 2000)
-				AB.health += 50+flux_rate //slowly recharge
-				ship.shields_active = FALSE
-				return
-	flux_rate = flux*100
-	regen = (flux*flux_rate)
-	var/obj/effect/adv_shield/SH = pick(shields)
-	for(var/obj/effect/adv_shield/S in shields)
-		if(SH.active)
-			S.regen = regen
-	if(SH.active && !SH.density) //Active means the shieldgen is turning  it on, if it's not active the shieldgen cut it off
-		if(SH.health <= 2000) //once they go down, they must charge back up a bit
-			for(var/obj/effect/adv_shield/A in shields)
-				A.health += 50 //slowly recharge
-				ship.shields_active = FALSE
-		else //problem here
-			for(var/obj/effect/adv_shield/A in shields)
-				A.activate()
-				ship.shields_active = TRUE
-	if(SH.active) //we are active
-		ship.shields_active = TRUE
-		if(SH.health < SH.maxhealth)
-			for(var/obj/effect/adv_shield/A in shields)
-				regen += ship.SC.shields.regen_bonus
-				A.health += regen
-		//	health += regen
-		else
-			return
-		if(SH.health <= 0)
-			for(var/obj/effect/adv_shield/A in shields)
-				A.health = 0
-				ship.shields_active = 0
-				A.deactivate()
-	else if(!SH.active)
-		for(var/obj/effect/adv_shield/A in shields)
-			A.deactivate()
-	if(current_fan)
-		if(current_fan.fancurrent > 0)
-			if(shield_system.heat)
-				shield_system.heat -= current_fan.fancurrent/10
-				current_fan.fanhealth -= current_fan.fancurrent*0.50
-			if(current_fan.fancurrent > 3)
-				if(current_fan.fanhealth < -50) // maintain your fans!
-					explosion(get_turf(src), 0, 4, 4, flame_range = 14)
-
-*/
-//	calculate()
-
-
-/*
-/obj/effect/adv_shield/proc/percentage(damage)
-	var/counter
-	var/percent = health
-//	for(var/obj/effect/adv_shield/S in generator.shields)
-//		percent += S.health
-//		maxhealth += maxhealth
-	counter = maxhealth
-	percent = percent/counter
-	percent = percent*100
-	generator.say("Shields are buckling, absorbed: [damage]: Shields at [percent]%")
-	playsound(src.loc, 'StarTrek13/sound/borg/machines/bleep2.ogg', 100,1)
-	return
-
-*/
-
-/obj/machinery/space_battle/shield_generator/attack_hand(mob/user)
-	if(shield_system.failed)
-		to_chat(user, "Shield Systems have failed.")
-		return
-	var/obj/machinery/space_battle/shield_generator/s = ""
-
-	s += "<B>CONTROL PANEL</B><BR>"
-
-	s += "<A href='?src=\ref[src];toggle=1;clicker=\ref[user]'>Toggle Power</A><BR><BR>"
-
-	s += "Fan Power: [current_fan ? current_fan.fancurrent : "?"]<BR>"
-	s += "<A href='?src=\ref[src];fandecrease=1;clicker=\ref[user]'>-</A> -------- <A href='?src=\ref[src];fanincrease=1;clicker=\ref[user]'>+</A><BR><BR>"
-
-	s += "<B>STATISTICS</B><BR>"
-	s += "Shields Maintained: [shields_maintained]<BR>"
-	s += "Flux Rate: [flux_rate]<BR>"
-	s += "Power Usage: [idle_power_usage]<BR>"
-	s += "Heat: [heat]<BR>"
-	if(current_fan)
-		s += "Fan Utility: [current_fan.fanhealth]"
-
-	var/datum/browser/popup = new(user, "Shield Generator Options", name, 360, 350)
-	popup.set_content(s)
-	popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
-	popup.open()
-	if(user.canUseTopic(src))
-		addtimer(CALLBACK(src,/atom/proc/attack_hand, user), 20)
-
-/obj/machinery/space_battle/shield_generator/Topic(href, href_list)
-	..()
-	var/client/user = locate(href_list["clicker"])
-	if(href_list["toggle"])
-		toggle(user)
-		return
-
-	if(!current_fan)
-		to_chat(user, "There are no fans attached to the shield generator.")
-		return
-
-	// TODO: Add cool sound effects
-	// For future coders: current_fan is meant to be hidden. you're suppose t
-	if(href_list["fandecrease"])
-		current_fan.fancurrent = max(current_fan.fanmin, current_fan.fancurrent - 5)
-
-	if(href_list["fanincrease"])
-		current_fan.fancurrent = min(current_fan.fanmax, current_fan.fancurrent + 5)
-
-/obj/machinery/space_battle/shield_generator/proc/toggle(mob/user)
-	if(shield_system.failed)
-		to_chat(user, "Shield Systems have failed.")
-		return
-	if(on)
-		to_chat(user, "shields dropped")
-		ship.SC.shields.toggled = FALSE
-		on = 0 //turn off
-		for(var/obj/effect/adv_shield/S in shields)
-			S.deactivate()
-			S.active = 0
-			ship.shields_active = 0
-		ship.SC.shields.active = FALSE
-		return
-	if(!on)
-		if(ship.SC.shields.health >= 5000)
-			to_chat(user, "shields activated")
-			on = 1
-			ship.SC.shields.toggled = TRUE
-			for(var/obj/effect/adv_shield/S in shields)
-				S.activate()
-				S.active = 1
-			ship.shields_active = 1
-			return
-		else
-			on = 0
-			to_chat(user, "error, shields have failed!")
-			return
-
-/obj/machinery/space_battle/shield_generator/Initialize(timeofday)
-	..()
-
-/*
-/obj/machinery/space_battle/shield_generator/proc/initialize()
-	var/area/thearea = get_area(src)
-//	var/i
-//	var/datum/gas_mixture/A = new
-//	A.volume = 200
-//	airs[i] = A
-	for(var/obj/effect/landmark/shield/marker in thearea)
-		if(!marker in thearea)
-			return
-		var/obj/effect/adv_shield/shield = new(src)
-		shield.dir = marker.dir
-		shield.forceMove(get_turf(marker))
-		shield.generator = src
-		shield.icon_state = "shieldwalloff"
-		shields += shield
-*/
-
-/obj/machinery/space_battle/shield_generator/take_damage(var/damage, damage_type = PHYSICAL)
-	src.say("Shield taking damage: [damage] : [damage_type == PHYSICAL ? "PHYSICAL" : "ENERGY"]")
-	if(shield_system)
-		shield_system.integrity -= damage
-	if(current_fan)
-		current_fan.fanhealth -= damage*0.10
-	return 1
-
-/*
-/obj/machinery/space_battle/shield_generator/process_atmos()
-	..()
-	if(!on)
-		return
-	var/datum/gas_mixture/air1 = airs[1]
-	if(/*!nodes[1]*/!connected|| !airs[1] || !air1.gases.len || air1.gases[/datum/gas/oxygen][MOLES] < 5) // Turn off if the machine won't work.
-		on = FALSE
-		update_icon()
-		return
-	if(on)
-		var/cold_protection = 0
-		var/temperature_delta = air1.temperature - temperature // Heat generated - temperature of the gas mix
-		if(abs(temperature_delta) > 1)
-			var/air_heat_capacity = air1.heat_capacity()
-			var/heat = ((1 - cold_protection) * 0.1 + conduction_coefficient) * temperature_delta * (air_heat_capacity * heat_capacity / (air_heat_capacity + heat_capacity))
-
-			air1.temperature = max(air1.temperature - heat / air_heat_capacity, TCMB)
-			temperature = max(heat / heat_capacity, TCMB)
-
-		air1.gases[/datum/gas/oxygen][MOLES] -= 0.5 / efficiency // Magically consume gas? why not, I don't get atmos code
-
-*/
-
-
-		//S.calculate()
-//	to_chat(world, "calculating:")
-//	to_chat(world, "regen rate[regen]")
-//	to_chat(world, "maxhealth: [S.maxhealth]")
-//	to_chat(world, "health: [S.health]")
-	//to_chat(world, "________________")
-
-
 /obj/effect/landmark/shield
 	name = "shield marker"
 	icon = 'icons/effects/effects.dmi'
@@ -582,225 +306,8 @@
 	ion_trail = new
 	ion_trail.set_up(src)
 
-/obj/item/circuitboard/machine/phase_cannon
-	name = "phaser array circuit board"
-
-/obj/machinery/power/ship/phaser
-	name = "phaser array"
-	desc = "A powerful weapon designed to take down shields.\n<span class='notice'>Alt-click to rotate it clockwise.</span>"
-	icon = 'StarTrek13/icons/trek/phaser.dmi'
-	icon_state = "phaserarray"
-	anchored = 1
-	dir = 4
-	density = 0
-	pixel_x = -64
-	var/charge = 1000 //current power levels
-	var/charge_rate = 100
-	var/state = 1
-	var/locked = 0
-	var/obj/structure/cable/attached		// the attached cable
-	var/max_power = 1000		// max power it can hold
-	var/fire_cost = 200
-	var/percentage = 0 //percent charged
-	var/list/shipareas = list()
-	var/target = null
-	var/obj/machinery/space_battle/shield_generator/shieldgen
-	var/damage = 650
-
-/obj/machinery/power/ship/phaser/opposite
-	dir = 8
-	pixel_x = 64
-
-/obj/machinery/power/ship/phaser/examine(mob/user)
-	. = ..()
-	percentage = (charge / max_power) * 100
-	to_chat(user, "it is [percentage]% full")
-
-/obj/machinery/power/ship/phaser/ex_act(severity)
-	return 0
-
-/*
-/obj/machinery/power/ship/phaser/process()
-	if(!attached)
-	//	state = 0
-		return
-	var/datum/powernet/PN = attached.powernet
-	if(PN)
-		// found a powernet, so drain up to max power from it
-		percentage = (charge / max_power) * 100
-		var/drained = min ( charge_rate, PN.avail )
-		PN.load += drained
-		charge += drained
-		if(drained < charge_rate)
-			for(var/obj/machinery/power/terminal/T in PN.nodes)
-				if(istype(T.master, /obj/machinery/power/apc))
-					var/obj/machinery/power/apc/A = T.master
-					if(A.operating && A.cell)
-						A.cell.charge = max(0, A.cell.charge - 50)
-						charge += 50
-						if(A.charging == 2) // If the cell was full
-							A.charging = 1 // It's no longer full
-
-*/
-
-/obj/machinery/power/ship/phaser/Initialize(timeofday)
-	..()
-	var/obj/item/circuitboard/machine/B = new /obj/item/circuitboard/machine/phase_cannon(null)
-	B.apply_default_parts(src)
-	RefreshParts()
-	find_generator()
-
-/obj/machinery/power/ship/phaser/proc/find_generator()
-	var/area/thearea = get_area(src)
-	for(var/obj/machinery/space_battle/shield_generator/S in thearea)
-		shieldgen = S
-
-/obj/machinery/power/ship/phaser/proc/find_cores()
-	var/area/thearea = get_area(src)
-	for(var/area/AR in world)
-		if(istype(AR, /area/ship)) //change me
-			shipareas += AR.name
-			shipareas[AR.name] = AR
-			if(AR == thearea)
-				shipareas -= AR.name
-				shipareas[AR.name] = null
-	if(shipareas.len)
-		src.say("Target located")
-	else
-		src.say("No warp signatures detected")
-	for(var/obj/structure/fluff/helm/desk/tactical/T in thearea)
-		if(!src in T.weapons)
-			T.weapons += src
-
-/obj/machinery/power/ship/phaser/proc/can_fire()
-	if(state == 1)
-		if(charge >= 200)
-			return 1
-		else
-			return 0
-	else
-		return 0
 
 //DEFINE TARGET
-
-/area/ship
-	parallax_movedir = FALSE
-	name = "USS Cadaver"
-	icon_state = "ship"
-	requires_power = 0 //fix
-	has_gravity = 1
-	noteleport = 0
-	blob_allowed = 0 //Should go without saying, no blobs should take over centcom as a win condition.
-	dynamic_lighting = DYNAMIC_LIGHTING_FORCED
-	var/obj/item/clothing/neck/combadge/combadges = list()
-
-//Starfleet
-
-/area/ship/federation/starbase
-	name = "Starbase 1"
-	icon_state = "ship"
-
-/area/ship/romulan
-	name = "Decius"
-	icon_state = "ship"
-
-/area/ship/federation/entax
-	name = "USS Entax"
-	icon_state = "ship"
-
-/area/ship/federation/sovreign
-	name = "USS Sovereign"
-	icon_state = "ship"
-
-//Nanotrasen
-
-/area/ship/nanotrasen
-	name = "NSV Muffin"
-	icon_state = "ship"
-
-/area/ship/nanotrasen/fighter
-	name = "NSV Hagan"
-	icon_state = "ship"
-
-/area/ship/nanotrasen/cruiser
-	name = "NSV Hyperion"
-	icon_state = "ship"
-
-/area/ship/nanotrasen/freighter
-	name = "NSV Crates"
-	icon_state = "ship"
-
-/area/ship/nanotrasen/capital_class
-	name = "NSV Annulment"
-	icon_state = "ship"
-
-/area/ship/nanotrasen/ss13
-	name = "Space Station 13"
-	icon_state = "ship"
-
-/area/ship/overmap/nanotrasen/research
-	name = "NSV Woolf research outpost"
-	icon_state = "ship"
-
-/area/ship/overmap/nanotrasen/trading_outpost
-	name = "NSV Mercator trade station."
-	icon_state = "ship"
-
-//Borg
-
-/area/ship/borg
-	name = "Unimatrix 1-3"
-	icon_state = "ship"
-
-/obj/structure/fluff/warpcore
-	name = "warp core"
-	desc = "It hums lowly, it runs on dilithium"
-	icon = 'StarTrek13/icons/borg/borg.dmi'
-	icon_state = "warp"
-	anchored = TRUE
-	density = 1
-	opacity = 0 //I AM LOUD REEE WATCH OUT
-	layer = 4.5
-	var/ambience = 'StarTrek13/sound/trek/engines/engine.ogg'
-	var/cooldown2 = 116 //11 second cooldown
-	var/saved_time = 0
-
-/obj/structure/fluff/warpcore/Initialize(timeofday)
-	START_PROCESSING(SSobj,src)
-
-
-/obj/structure/fluff/warpcore/process()
-	if(world.time >= saved_time + cooldown2)
-		saved_time = world.time
-		for(var/mob/M in get_area(src))
-			M << ambience
-
-/datum/looping_sound/trek/engine_hum
-	start_sound = null
-	start_length = 0
-	mid_sounds = list('StarTrek13/sound/trek/engines/engine.ogg'=1)
-	mid_length = 133
-	end_sound = null
-	volume = 70
-
-/datum/looping_sound/trek/bridge
-	start_sound = null
-	start_length = 0
-	mid_sounds = list('StarTrek13/sound/borg/machines/tng_bridge_2.ogg'=1)
-	mid_length = 163
-	end_sound = null
-	volume = 150
-
-/datum/looping_sound/trek/warp
-	start_sound = null
-	start_length = 0
-	mid_sounds = list('StarTrek13/sound/borg/machines/engihum.ogg'=1)
-	mid_length = 115
-	end_sound = null
-	volume = 115
-
-/obj/structure/fluff/warpcore/Initialize(timeofday)
-	. = ..()
 
 /obj/structure/fluff/helm
 	name = "helm control"
@@ -824,31 +331,16 @@
 	name = "ship markings"
 	icon_state = "trek4"
 
-/obj/structure/fluff/warpcore/massive
-	name = "high powered warp core"
-	desc = "This massive machine will propel your starship to unheard of speeds."
-	icon = 'StarTrek13/icons/trek/warp_core_huge.dmi'
-	icon_state = "warpcore"
-
-/obj/structure/fluff/warpcore/massive/smaller
-	icon_state = "warpcore_smaller"
-	pixel_x = 16
-
 /obj/machinery/shieldgen/wallmounted
-		name = "structural integrity field generator"
-		desc = "Can be activated to seal off hull breaches, don't expect the emergency fields it creates to last long though...."
-		icon = 'StarTrek13/icons/trek/star_trek.dmi'
-		icon_state = "shieldoff"
-		density = 1
-		opacity = 0
-		anchored = 1
-		can_be_unanchored = 0
-		shield_range = 10
-
-
-/obj/machinery/shieldgen/wallmounted/process
-
-//Par made some sick bridge sprites, nut on them and think of Par not me whilst you do
+	name = "structural integrity field generator"
+	desc = "Can be activated to seal off hull breaches, don't expect the emergency fields it creates to last long though...."
+	icon = 'StarTrek13/icons/trek/star_trek.dmi'
+	icon_state = "shieldoff"
+	density = 1
+	opacity = 0
+	anchored = 1
+	can_be_unanchored = 0
+	shield_range = 10
 
 /obj/structure/fluff/ship
 	name = "wall panel"
@@ -942,12 +434,14 @@
 	density = 0
 	anchored = 1.0
 
-/obj/structure/catwalk/Initialize(timeofday)
+/obj/structure/catwalk/Initialize()
 	. = ..()
+	for(var/obj/structure/catwalk/O in range(1))
+		O.update_icon()
 	for(var/obj/structure/catwalk/C in get_turf(src))
 		if(C != src)
 			warning("Duplicate [type] in [loc] ([x], [y], [z])")
-			qdel(C)
+			return INITIALIZE_HINT_QDEL
 	update_icon()
 
 /obj/structure/catwalk/Destroy()
@@ -963,6 +457,33 @@
 		if(2.0)
 			qdel(src)
 	return
+
+/obj/structure/catwalk/update_icon()
+	var/connectdir = 0
+	for(var/direction in GLOB.cardinals)
+		if(locate(/obj/structure/catwalk, get_step(src, direction)))
+			connectdir |= direction
+
+	//Check the diagonal connections for corners, where you have, for example, connections both north and east. In this case it checks for a north-east connection to determine whether to add a corner marker or not.
+	var/diagonalconnect = 0 //1 = NE; 2 = SE; 4 = NW; 8 = SW
+	//NORTHEAST
+	if(connectdir & NORTH && connectdir & EAST)
+		if(locate(/obj/structure/catwalk, get_step(src, NORTHEAST)))
+			diagonalconnect |= 1
+	//SOUTHEAST
+	if(connectdir & SOUTH && connectdir & EAST)
+		if(locate(/obj/structure/catwalk, get_step(src, SOUTHEAST)))
+			diagonalconnect |= 2
+	//NORTHWEST
+	if(connectdir & NORTH && connectdir & WEST)
+		if(locate(/obj/structure/catwalk, get_step(src, NORTHWEST)))
+			diagonalconnect |= 4
+	//SOUTHWEST
+	if(connectdir & SOUTH && connectdir & WEST)
+		if(locate(/obj/structure/catwalk, get_step(src, SOUTHWEST)))
+			diagonalconnect |= 8
+
+	icon_state = "catwalk[connectdir]-[diagonalconnect]"
 
 /obj/structure/catwalk/attackby(obj/item/C as obj, mob/user as mob)
 	if (istype(C, /obj/item/weldingtool))

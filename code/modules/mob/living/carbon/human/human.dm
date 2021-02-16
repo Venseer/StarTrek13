@@ -25,7 +25,6 @@
 	physiology = new()
 
 	handcrafting = new()
-
 	. = ..()
 
 	AddComponent(/datum/component/redirect, list(COMSIG_COMPONENT_CLEAN_ACT), CALLBACK(src, .proc/clean_blood))
@@ -534,6 +533,10 @@
 		if(wear_mask.flags_inv & HIDEEYES)
 			obscured |= SLOT_GLASSES
 
+	if(dna.species)
+		if(SLOT_W_UNIFORM in obscured && SLOT_WEAR_MASK in obscured)
+			obscured |= SPECIES_SHOWN
+
 	if(obscured.len)
 		return obscured
 	else
@@ -800,6 +803,7 @@
 		regenerate_organs()
 	remove_all_embedded_objects()
 	set_heartattack(FALSE)
+	set_hygiene(HYGIENE_LEVEL_NORMAL)
 	drunkenness = 0
 	for(var/datum/mutation/human/HM in dna.mutations)
 		if(HM.quality != POSITIVE)
@@ -1043,3 +1047,6 @@
 
 /mob/living/carbon/human/species/zombie/krokodil_addict
 	race = /datum/species/krokodil_addict
+
+/mob/living/carbon/human/species/holographic
+	race = /datum/species/holographic

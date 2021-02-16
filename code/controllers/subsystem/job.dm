@@ -14,6 +14,13 @@ SUBSYSTEM_DEF(job)
 
 	var/overflow_role = "Crewman"
 
+/datum/controller/subsystem/job/proc/FreeRole(var/rank)	//making additional slot on the fly
+	var/datum/job/job = GetJob(rank)
+	if(job && job.current_positions >= job.total_positions && job.total_positions != -1)
+		job.total_positions++
+		return 1
+	return 0 //totally not nicked from bay derivates :b1:
+
 /datum/controller/subsystem/job/Initialize(timeofday)
 	if(!occupations.len)
 		SetupOccupations()
@@ -26,9 +33,9 @@ SUBSYSTEM_DEF(job)
 /datum/controller/subsystem/job/proc/set_overflow_role(new_overflow_role)
 	var/datum/job/new_overflow = GetJob(new_overflow_role)
 	var/cap = CONFIG_GET(number/overflow_cap)
-
-	new_overflow.spawn_positions = cap
-	new_overflow.total_positions = cap
+	if(new_overflow)
+		new_overflow.spawn_positions = cap
+		new_overflow.total_positions = cap
 
 	if(new_overflow_role != overflow_role)
 		var/datum/job/old_overflow = GetJob(overflow_role)
@@ -98,6 +105,8 @@ SUBSYSTEM_DEF(job)
 
 /datum/controller/subsystem/job/proc/FindOccupationCandidates(datum/job/job, level, flag)
 	JobDebug("Running FOC, Job: [job], Level: [level], Flag: [flag]")
+	if(!job || level || flag)
+		message_admins("Couldn't find a job to find candidates for...may wanna fix that! (Jobs SS, line 110)")
 	var/list/candidates = list()
 	for(var/mob/dead/new_player/player in unassigned)
 		if(jobban_isbanned(player, job.title) || QDELETED(player))
@@ -265,6 +274,9 @@ SUBSYSTEM_DEF(job)
 	//People who wants to be the overflow role, sure, go on.
 	JobDebug("DO, Running Overflow Check 1")
 	var/datum/job/overflow = GetJob(SSjob.overflow_role)
+	if(!overflow)
+		JobDebug("Overflow role not assigned!")
+		return
 	var/list/overflow_candidates = FindOccupationCandidates(overflow, 3)
 	JobDebug("AC1, Candidates: [overflow_candidates.len]")
 	for(var/mob/dead/new_player/player in overflow_candidates)
@@ -383,47 +395,6 @@ SUBSYSTEM_DEF(job)
 	else
 		H = M
 	var/datum/job/job = GetJob(rank)
-	M.player_faction = M.client.prefs.player_faction
-	if(job.starting_faction == M.client.prefs.player_faction)
-		H.job = rank					//For us, latejoins are a last resort, as they could end up in the middle of the wrong faction base.
-	var/obj/effect/landmark/faction_spawn/S = null
-	if(!M.client.prefs.player_faction)
-		for(var/datum/faction/F in SSfaction.factions)
-			if(F.name == job.starting_faction)
-				if(M.client)
-					M.client.prefs.player_faction = F//pick(SSfaction.factions) //the runtimes boy oh!
-	var/datum/faction/thefaction = M.client.prefs.player_faction
-	S = pick(thefaction.spawns)
-	if(joined_late)
-		SendToAtom(H, S, buckle = FALSE)
-		thefaction.onspawn(H)
-	else
-		SendToAtom(H, S, buckle = FALSE)
-		thefaction.onspawn(H)
-
-//	if(!S)
-	//	log_world("Couldn't find a round start spawn point for [rank]")
-	//	SendToLateJoin(H)
-	/*
-//	if(!joined_late)//If we joined at roundstart we should be positioned at our workstation
-		for(var/obj/effect/landmark/start/sloc in GLOB.start_landmarks_list)
-			if(sloc.name != rank)
-				S = sloc //so we can revert to spawning them on top of eachother if something goes wrong
-				continue
-			if(locate(/mob/living) in sloc.loc)
-				continue
-			S = sloc
-			sloc.used = TRUE
-			break
-		if(length(GLOB.jobspawn_overrides[rank]))
-			S = pick(GLOB.jobspawn_overrides[rank])
-		if(S)
-			SendToAtom(H, S, buckle = FALSE)
-		if(!S) //if there isn't a spawnpoint send them to latejoin, if there's no latejoin go yell at your mapper
-			log_world("Couldn't find a round start spawn point for [rank]")
-			SendToLateJoin(H)
-		*/
-
 
 	if(H.mind)
 		H.mind.assigned_role = rank
@@ -441,16 +412,34 @@ SUBSYSTEM_DEF(job)
 	to_chat(M, "<b>You are the [rank].</b>")
 	if(job)
 		to_chat(M, "<b>As the [rank] you answer directly to [job.supervisors]. Special circumstances may change this.</b>")
-		to_chat(M, "<b>To speak on your departments radio, use the :h button. To see others, look closely at your headset.</b>")
+		to_chat(M, "<b>To speak on your ship's comms net, use :k, if you wish to link your comms to another ship, alt click your combadges. If it falls silent, ctrl click it.</b>")
 		if(job.req_admin_notify)
 			to_chat(M, "<b>You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.</b>")
 		if(CONFIG_GET(number/minimal_access_threshold))
-			to_chat(M, "<FONT color='blue'><B>As this station was initially staffed with a [CONFIG_GET(flag/jobs_have_minimal_access) ? "full crew, only your job's necessities" : "skeleton crew, additional access may"] have been added to your ID card.</B></font>")
+			to_chat(M, "<font color='#7289da'><B>As this station was initially staffed with a [CONFIG_GET(flag/jobs_have_minimal_access) ? "full crew, only your job's necessities" : "skeleton crew, additional access may"] have been added to your ID card.</B></font>")
 
 	if(job && H)
 		job.after_spawn(H, M)
-	SSfaction.addToFaction(M)
-	return H
+
+	SSfaction.TryToHandleJob(H) //Who can it be knockin at my door? go away, don't come down here no more
+//Why did I parse two args into a proc that only takes one?
+
+//	H.player_faction = M.client.prefs.player_faction
+//	var/obj/effect/landmark/faction_spawn/S
+//	var/datum/faction/thefaction = M.client.prefs.player_faction
+//	S = pick(thefaction.spawns)
+//	SendToAtom(H, S, buckle = FALSE)
+//	else //Something fucked up, default to normal
+//		thefaction.onspawn(H)
+	//	SSfaction.addToFaction(M)
+
+//	if(N.crews)
+//		H.crew = pick(N.crews)
+//		H.crew.Add(H)
+//	else
+	//	H.crew = pick(SSfaction.crews)
+//		H.crew.Add(H)
+//	return H
 
 
 /datum/controller/subsystem/job/proc/setup_officer_positions()
@@ -564,10 +553,11 @@ SUBSYSTEM_DEF(job)
 	M.forceMove(get_turf(A))
 
 /datum/controller/subsystem/job/proc/SendToLateJoin(mob/M, buckle = TRUE)
-	var/datum/faction/thefaction = M.client.prefs.player_faction
-	var/obj/effect/S = pick(thefaction.spawns)
-	SendToAtom(M, S, buckle = FALSE)
-	thefaction.onspawn(M)
+	SSfaction.TryToHandleJob(M)
+//	var/datum/faction/thefaction = M.client.prefs.player_faction
+//	var/obj/effect/S = pick(thefaction.spawns)
+//	SendToAtom(M, S, buckle = FALSE)
+//	thefaction.onspawn(M)
 
 ///////////////////////////////////
 //Keeps track of all living heads//
